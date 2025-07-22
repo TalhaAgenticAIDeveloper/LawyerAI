@@ -6,8 +6,11 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
+from crewai import Crew
 import os
 import google.generativeai as genai
+from agents import LexAI_Agents
+from tasks import LexAI_Tasks
 
 
 
@@ -20,7 +23,7 @@ st.set_page_config(page_title="LexAI", layout="wide")
 st.title("📚 LexAI - AI-powered Legal Research Assistant")
 
 # Sidebar for module selection
-mode = st.sidebar.radio("📌 Select Module", ["Question Answering", "Explainer", "Analyzer"])
+mode = st.sidebar.radio("📌 Select Module", ["Question Answering", "Explainer", "Analyzer",  "Contract Drafting"])
 
 # PDF Text Extraction
 def get_pdf_text(pdf_docs):
@@ -92,8 +95,6 @@ pdf_docs = st.file_uploader("📄 Upload your PDF files", accept_multiple_files=
 
 
 
-
-
 # PDF Processing
 if st.button("🚀 Submit & Process PDF") and pdf_docs:
     with st.spinner("Processing PDF..."):
@@ -130,54 +131,88 @@ if mode == "Question Answering":
             st.success("✅ Answer generated:")
             st.write(response)
 
+
+
+
 elif mode == "Explainer":
     st.subheader("📘 Document Explainer")
+    
+
+
     if st.button("Explain Document"):
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
-        prompt = f"""
-        First, determine if the following document is a legal document (such as agreements, contracts, policies, terms, or legal notices).
 
-        If it **is NOT** a legal document, respond politely to the user:
-        "This document does not appear to be a legal document. Please upload a legal document (e.g., a contract, agreement, or terms and conditions) for explanation."
+        agents = LexAI_Agents()
+        Explainer = agents.Document_Explainer_Agent()
 
-        If it **IS** a legal document, then do the following:
-        1. Provide a brief summary of the document.
-        2. Extract and list all key legal clauses.
-        3. Explain each clause in simple, plain English.
-        4. Identify important entities involved (e.g., people, companies), dates, and obligations mentioned.
+        tasks = LexAI_Tasks()
+        Document_Explainer_Task = tasks.Document_Explanation_Task(Explainer, st.session_state.raw_text)
 
-        Keep the explanation well-structured and easy to follow.
+        crew = Crew(
+                agents=[Explainer],
+                tasks=[Document_Explainer_Task],
+            )
+        results = crew.kickoff()
 
-        Document content:
-        {raw_text}
-        """
-        with st.spinner("Generating explanation..."):
-            explanation = llm.invoke(prompt)
-            st.success("✅ Explanation ready:")
-            st.write(explanation.content)
+        st.success("✅ Advisory Generated!")
+        st.subheader("📢 Final Advisory")
+        ai_response = results.raw
+        st.write(ai_response)
 
 elif mode == "Analyzer":
     st.subheader("🧠 Legal Risk Analyzer")
     if st.button("Analyze Document"):
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
-        prompt = f"""
-        Step 1: Determine whether the following document is a legal document (e.g., a contract, agreement, policy, terms and conditions, legal notice, etc.).
 
-        - If it is NOT a legal document, respond respectfully with:
-        "This document doesn't appear to be a legal document. Please upload a valid legal document (e.g., agreement, contract, terms, policy) for risk analysis."
+        agents = LexAI_Agents()
+        Analyzer = agents.Legal_Risk_Analyzer_Agent()
 
-        - If it IS a legal document, then proceed to analyze it and respond with clear and structured answers to the following:
-        1. Are there any contradictory or conflicting clauses?
-        2. Is any important section missing (e.g., signatures, termination, jurisdiction, payment terms)?
-        3. Are there vague or ambiguous terms that could cause confusion or legal loopholes?
-        4. Does the document include any elements that could be considered legally risky, non-compliant, or unfair?
+        tasks = LexAI_Tasks()
+        Legal_Risk_Analyzer_Task = tasks.Legal_Risk_Analysis_Task(Analyzer, st.session_state.raw_text)
 
-        Use clear formatting and bullet points in your response for readability.
 
-        Document:
-        {raw_text}
-        """
-        with st.spinner("Analyzing document..."):
-            analysis = llm.invoke(prompt)
-            st.success("✅ Analysis complete:")
-            st.write(analysis.content)
+        crew = Crew(
+                agents=[Analyzer],
+                tasks=[Legal_Risk_Analyzer_Task],
+            )
+        results = crew.kickoff()
+
+        st.success("✅ Advisory Generated!")
+        st.subheader("📢 Final Advisory")
+        ai_response = results.raw
+        st.write(ai_response)
+
+
+elif mode == "Contract Drafting":
+
+    st.subheader("📝 Contract Drafting Assistant")
+
+    # Step 1: Choose contract type
+    contract_type = st.selectbox("Choose contract type:", ["Non-Disclosure Agreement (NDA)", "Employment Contract", "Service Agreement", "Lease Agreement", "Custom"])
+
+    # Step 2: Optional fields to fill in
+    party_a = st.text_input("Party A (e.g., Company Name)")
+    party_b = st.text_input("Party B (e.g., Employee or Client Name)")
+    jurisdiction = st.text_input("Jurisdiction (e.g., California, UK, Pakistan)")
+    start_date = st.date_input("Start Date")
+    end_date = st.date_input("End Date")
+
+    # Generate Contract
+    if st.button("✍️ Generate Draft Contract"):
+        with st.spinner("Generating contract draft..."):
+
+            agents = LexAI_Agents()
+            Drafter = agents.Contract_Drafting_Agent()
+
+            tasks = LexAI_Tasks()
+            # Contract_Drafting_Task = tasks.Contract_Drafting_Task(Drafter, st.session_state.text_chunks,)
+            Contract_Drafting_Task = tasks.Contract_Drafting_Task(Drafter,contract_type, party_a, party_b, jurisdiction, start_date, end_date)
+
+            crew = Crew(
+                agents=[Drafter],
+                tasks=[Contract_Drafting_Task],
+            )
+            results = crew.kickoff()
+
+            st.success("✅ Advisory Generated!")
+            st.subheader("📢 Final Advisory")
+            ai_response = results.raw
+            st.write(ai_response)
