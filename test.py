@@ -140,45 +140,43 @@ elif mode == "Explainer":
 
 
     if st.button("Explain Document"):
+        with st.spinner("Explaining your Document..."):
 
-        agents = LexAI_Agents()
-        Explainer = agents.Document_Explainer_Agent()
+            agents = LexAI_Agents()
+            Explainer = agents.Document_Explainer_Agent()
 
-        tasks = LexAI_Tasks()
-        Document_Explainer_Task = tasks.Document_Explanation_Task(Explainer, st.session_state.raw_text)
+            tasks = LexAI_Tasks()
+            Document_Explainer_Task = tasks.Document_Explanation_Task(Explainer, st.session_state.raw_text)
 
-        crew = Crew(
-                agents=[Explainer],
-                tasks=[Document_Explainer_Task],
-            )
-        results = crew.kickoff()
-
-        st.success("✅ Advisory Generated!")
-        st.subheader("📢 Final Advisory")
-        ai_response = results.raw
-        st.write(ai_response)
+            crew = Crew(
+                    agents=[Explainer],
+                    tasks=[Document_Explainer_Task],
+                )
+            results = crew.kickoff()
+            st.success("✅ Explanation Generated!")
+            ai_response = results.raw
+            st.write(ai_response)
 
 elif mode == "Analyzer":
     st.subheader("🧠 Legal Risk Analyzer")
     if st.button("Analyze Document"):
+        with st.spinner("Analyzing your Document..."):
 
-        agents = LexAI_Agents()
-        Analyzer = agents.Legal_Risk_Analyzer_Agent()
+            agents = LexAI_Agents()
+            Analyzer = agents.Legal_Risk_Analyzer_Agent()
 
-        tasks = LexAI_Tasks()
-        Legal_Risk_Analyzer_Task = tasks.Legal_Risk_Analysis_Task(Analyzer, st.session_state.raw_text)
+            tasks = LexAI_Tasks()
+            Legal_Risk_Analyzer_Task = tasks.Legal_Risk_Analysis_Task(Analyzer, st.session_state.raw_text)
 
 
-        crew = Crew(
-                agents=[Analyzer],
-                tasks=[Legal_Risk_Analyzer_Task],
-            )
-        results = crew.kickoff()
-
-        st.success("✅ Advisory Generated!")
-        st.subheader("📢 Final Advisory")
-        ai_response = results.raw
-        st.write(ai_response)
+            crew = Crew(
+                    agents=[Analyzer],
+                    tasks=[Legal_Risk_Analyzer_Task],
+                )
+            results = crew.kickoff()
+            st.success("✅ Analysis Generated!")
+            ai_response = results.raw
+            st.write(ai_response)
 
 
 elif mode == "Contract Drafting":
@@ -211,8 +209,7 @@ elif mode == "Contract Drafting":
                 tasks=[Contract_Drafting_Task],
             )
             results = crew.kickoff()
-
-            st.success("✅ Advisory Generated!")
-            st.subheader("📢 Final Advisory")
+            st.spinner("Generating contract draft...")
+            st.success("✅ Contract Draft Generated!")
             ai_response = results.raw
             st.write(ai_response)
